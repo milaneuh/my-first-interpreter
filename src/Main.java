@@ -121,6 +121,15 @@ class Scanner {
             case '+' -> addToken(TokenType.PLUS);
             case ';' -> addToken(TokenType.SEMICOLON);
             case '*' -> addToken(TokenType.STAR);
+            case '/' -> {
+                if(match('/')){
+                    while (peek() != '\n' && !isAtEnd()) advance();
+                }else addToken(TokenType.SLASH);
+            }
+            case ' ', '\r', '\t' -> {
+            }
+            case '\n' -> line++;
+            case '"' -> string();
             default -> Gauntlet.error(line, "Unexpected character.");
         }
     }
@@ -139,6 +148,38 @@ class Scanner {
 
         String text = source.substring(start, current);
         tokens.add(new Token(type, text, litteral, line));
+    }
+
+    private boolean match(char expected) {
+        if (isAtEnd()) return false;
+        if (source.charAt(current) != expected) return false;
+
+        current++;
+        return true;
+    }
+
+    private char peek(){
+        if(isAtEnd()) return '\0';
+        return source.charAt(current);
+    }
+
+    private void string() {
+        while (peek() != '"' && !isAtEnd()) {
+            if (peek() == '\n') line++;
+            advance();
+        }
+
+        if (isAtEnd()) {
+            Gauntlet.error(line, "Unterminated string.");
+            return;
+        }
+
+        // The closing ".
+        advance();
+
+        // Trim the surrounding quotes.
+        String value = source.substring(start + 1, current - 1);
+        addToken(TokenType.STRING, value);
     }
 }
 
