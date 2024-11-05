@@ -4,6 +4,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 class Gauntlet {
@@ -18,7 +19,6 @@ class Gauntlet {
                 runFile(args[0]);
             } else runPrompt();
         }
-        if (hasError) System.exit(65);
     }
 
 
@@ -31,12 +31,15 @@ class Gauntlet {
             String line = reader.readLine();
             assert line != null : "The input should not be null.";
             run(line);
+            hasError = false;
         }
     }
 
     private static void runFile(String arg) throws IOException {
         byte[] bytes = Files.readAllBytes(Paths.get(arg));
         run(new String(bytes, Charset.defaultCharset()));
+
+        if (hasError) System.exit(65);
     }
 
     private static void run(String src) {
@@ -80,9 +83,62 @@ record Token(TokenType type, String lexeme, Object litteral, int line) {
     }
 }
 
-record Scanner(String source) {
+class Scanner {
+    private final String source;
+    private final List<Token> tokens = new ArrayList<>();
+    private int start = 0;
+    private int current = 0;
+    private int line = 1;
+
+    Scanner(String source) {
+        assert source != null : "Source should not be null.";
+        this.source = source;
+    }
+
+    boolean isAtEnd() {
+        return current >= source.length();
+    }
+
     public List<Token> scanTokens() {
-        return null;
+        while (!isAtEnd()) {
+            start = current;
+            scanToken();
+        }
+        tokens.add(new Token(TokenType.EOF, "", null, line));
+        return tokens;
+    }
+
+    private void scanToken() {
+        char c = advance();
+        switch (c) {
+            case '(' -> addToken(TokenType.LEFT_PAREN);
+            case ')' -> addToken(TokenType.RIGHT_PAREN);
+            case '{' -> addToken(TokenType.LEFT_BRACE);
+            case '}' -> addToken(TokenType.RIGHT_BRACE);
+            case ',' -> addToken(TokenType.COMMA);
+            case '.' -> addToken(TokenType.DOT);
+            case '-' -> addToken(TokenType.MINUS);
+            case '+' -> addToken(TokenType.PLUS);
+            case ';' -> addToken(TokenType.SEMICOLON);
+            case '*' -> addToken(TokenType.STAR);
+            default -> Gauntlet.error(line, "Unexpected character.");
+        }
+    }
+
+    private char advance() {
+        return source.charAt(current++);
+    }
+
+    private void addToken(TokenType type) {
+        addToken(type, null);
+    }
+
+    private void addToken(TokenType type, Object litteral) {
+        assert type != null;
+        assert litteral != null;
+
+        String text = source.substring(start, current);
+        tokens.add(new Token(type, text, litteral, line));
     }
 }
 
