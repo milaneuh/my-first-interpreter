@@ -1,7 +1,6 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -132,26 +131,49 @@ class Scanner {
      * Scans a single character from the input and determines the corresponding token type.
      * Depending on the character, it either adds a specific token, skips whitespace,
      * increments the line counter for newlines, or reports an error for unexpected characters.
-     *
      * Special cases:
+     * - Ignores whitespaces
      * - Handles single-line comments that start with '//'.
      * - If a double quote (") is encountered, invokes a method to process a string literal.
+     * - If a digit is encountered, invokes a method to process a number literal.
      */
     private void scanToken() {
         char c = advance();
         if (SIMPLE_TOKENS.containsKey(c)) {
             addToken(SIMPLE_TOKENS.get(c));
-            return;
+        }else {
+            //number case
+            if(isDigit(c)){
+                number();
+            }else {
+                // Special character cases
+                switch (c) {
+                    case '/' -> handleSlash();
+                    case ' ', '\r', '\t' -> { /* Ignore whitespace */ }
+                    case '\n' -> line++;
+                    case '"' -> string();
+                    default -> Gauntlet.error(line, "Unexpected character.");
+                }
+            }
+        }
+    }
+
+    private boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private void number(){
+        while (isDigit(peek())) advance();
+
+        // Look for a fractional part
+        if(peek() == '.' && isDigit(peekNext())){
+            // Consume the "."
+
+            do advance();
+            while (isDigit(peek()));
         }
 
-        // Special character cases
-        switch (c) {
-            case '/' -> handleSlash();
-            case ' ', '\r', '\t' -> { /* Ignore whitespace */ }
-            case '\n' -> line++;
-            case '"' -> string();
-            default -> Gauntlet.error(line, "Unexpected character.");
-        }
+        addToken(TokenType.NUMBER,Double.parseDouble(source.substring(start,current)));
     }
 
     private void handleSlash() {
@@ -187,6 +209,11 @@ class Scanner {
     private char peek() {
         if (isAtEnd()) return '\0';
         return source.charAt(current);
+    }
+
+    private char peekNext() {
+        if (current + 1 >= source.length()) return '\0';
+        return source.charAt(current + 1);
     }
 
     private void string() {
