@@ -103,6 +103,26 @@ class Scanner {
             ';', TokenType.SEMICOLON,
             '*', TokenType.STAR
     );
+
+    private static final Map<String, TokenType> KEYWORDS = Map.ofEntries(
+            Map.entry("and", TokenType.AND),
+            Map.entry("class", TokenType.CLASS),
+            Map.entry("else", TokenType.ELSE),
+            Map.entry("false", TokenType.FALSE),
+            Map.entry("for", TokenType.FOR),
+            Map.entry("fun", TokenType.FUN),
+            Map.entry("if", TokenType.IF),
+            Map.entry("nil", TokenType.NIL),
+            Map.entry("or", TokenType.OR),
+            Map.entry("print", TokenType.PRINT),
+            Map.entry("return", TokenType.RETURN),
+            Map.entry("super", TokenType.SUPER),
+            Map.entry("this", TokenType.THIS),
+            Map.entry("true", TokenType.TRUE),
+            Map.entry("var", TokenType.VAR),
+            Map.entry("while", TokenType.WHILE)
+    );
+
     private final String source;
     private final List<Token> tokens = new ArrayList<>();
     private int start = 0;
@@ -127,59 +147,85 @@ class Scanner {
         return tokens;
     }
 
-    /**
-     * Scans a single character from the input and determines the corresponding token type.
-     * Depending on the character, it either adds a specific token, skips whitespace,
-     * increments the line counter for newlines, or reports an error for unexpected characters.
-     * Special cases:
-     * - Ignores whitespaces
-     * - Handles single-line comments that start with '//'.
-     * - If a double quote (") is encountered, invokes a method to process a string literal.
-     * - If a digit is encountered, invokes a method to process a number literal.
-     */
     private void scanToken() {
         char c = advance();
         if (SIMPLE_TOKENS.containsKey(c)) {
             addToken(SIMPLE_TOKENS.get(c));
-        }else {
+        } else {
             //number case
-            if(isDigit(c)){
+            if (isDigit(c)) {
                 number();
-            }else {
+            } else {
                 // Special character cases
                 switch (c) {
+                    case 'o' -> {
+                        if (match('r')) addToken(TokenType.OR);
+                    }
                     case '/' -> handleSlash();
                     case ' ', '\r', '\t' -> { /* Ignore whitespace */ }
                     case '\n' -> line++;
                     case '"' -> string();
-                    default -> Gauntlet.error(line, "Unexpected character.");
+                    default -> {
+                        if (isDigit(c)) {
+                            number();
+                        } else if (isAlpha(c)) {
+                            identifier();
+                        } else {
+                            Gauntlet.error(line, "Unexpected character.");
+                        }
+                    }
                 }
             }
         }
+    }
+
+    private void identifier() {
+        while (isAlphaNumeric(peek())) advance();
+        String txt = source.substring(start, current);
+        addToken(KEYWORDS.getOrDefault(txt, TokenType.IDENTIFIER));
+    }
+
+    private boolean isAlpha(char c) {
+        return (c >= 'a' && c <= 'z') ||
+                (c >= 'A' && c <= 'Z') ||
+                c == '_';
+    }
+
+    private boolean isAlphaNumeric(char c) {
+        return isAlpha(c) || isDigit(c);
     }
 
     private boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
 
-    private void number(){
+    private void number() {
         while (isDigit(peek())) advance();
 
         // Look for a fractional part
-        if(peek() == '.' && isDigit(peekNext())){
+        if (peek() == '.' && isDigit(peekNext())) {
             // Consume the "."
 
             do advance();
             while (isDigit(peek()));
         }
 
-        addToken(TokenType.NUMBER,Double.parseDouble(source.substring(start,current)));
+        addToken(TokenType.NUMBER, Double.parseDouble(source.substring(start, current)));
     }
 
     private void handleSlash() {
         if (match('/')) {
-            // Ignore the rest of the line as a comment.
-            while (peek() != '\n' && !isAtEnd()) advance();
+            if('*' == peekNext()){
+                //Multi lines comment
+                // Ignore until we encounter "*/"
+                while ('*' != peekPrevious() && '/' != peek() && !isAtEnd()){
+                    advance();
+                }
+                advance();
+            }else {
+                //Single line comment
+                while (peek() != '\n' && !isAtEnd()) advance();
+            }
         } else {
             addToken(TokenType.SLASH);
         }
@@ -214,6 +260,11 @@ class Scanner {
     private char peekNext() {
         if (current + 1 >= source.length()) return '\0';
         return source.charAt(current + 1);
+    }
+
+    private char peekPrevious() {
+        assert current > 0 : "peekPrevious() can not be called if current is zero.";
+        return source.charAt(current - 1);
     }
 
     private void string() {
