@@ -74,24 +74,8 @@ enum TokenType {
     // Keywords.
     AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
 
-    EOF
-}
-
-record Token(TokenType type, String lexeme, Object litteral, int line) {
-    public static final String EMPTY_LEXEME = "";
-    public static final Object NULL_LITERAL = null;
-
-    public Token(TokenType type, int line) {
-        this(type, EMPTY_LEXEME, NULL_LITERAL, line);
-    }
-
-    public String toString() {
-        return type + " " + lexeme + " " + litteral;
-    }
-}
-
-class Scanner {
-    private static final Map<Character, TokenType> SIMPLE_TOKENS = Map.of(
+    EOF;
+    public static final Map<Character, TokenType> SIMPLE_TOKENS = Map.of(
             '(', TokenType.LEFT_PAREN,
             ')', TokenType.RIGHT_PAREN,
             '{', TokenType.LEFT_BRACE,
@@ -104,7 +88,7 @@ class Scanner {
             '*', TokenType.STAR
     );
 
-    private static final Map<String, TokenType> KEYWORDS = Map.ofEntries(
+    public static final Map<String, TokenType> KEYWORDS = Map.ofEntries(
             Map.entry("and", TokenType.AND),
             Map.entry("class", TokenType.CLASS),
             Map.entry("else", TokenType.ELSE),
@@ -122,6 +106,23 @@ class Scanner {
             Map.entry("var", TokenType.VAR),
             Map.entry("while", TokenType.WHILE)
     );
+}
+
+record Token(TokenType type, String lexeme, Object litteral, int line) {
+    public static final String EMPTY_LEXEME = "";
+    public static final Object NULL_LITERAL = null;
+
+    public Token(TokenType type, int line) {
+        this(type, EMPTY_LEXEME, NULL_LITERAL, line);
+    }
+
+    public String toString() {
+        return type + " " + lexeme + " " + litteral;
+    }
+}
+
+class Scanner {
+
 
     private final String source;
     private final List<Token> tokens = new ArrayList<>();
@@ -149,8 +150,8 @@ class Scanner {
 
     private void scanToken() {
         char c = advance();
-        if (SIMPLE_TOKENS.containsKey(c)) {
-            addToken(SIMPLE_TOKENS.get(c));
+        if (TokenType.SIMPLE_TOKENS.containsKey(c)) {
+            addToken(TokenType.SIMPLE_TOKENS.get(c));
         } else {
             //number case
             if (isDigit(c)) {
@@ -158,9 +159,6 @@ class Scanner {
             } else {
                 // Special character cases
                 switch (c) {
-                    case 'o' -> {
-                        if (match('r')) addToken(TokenType.OR);
-                    }
                     case '/' -> handleSlash();
                     case ' ', '\r', '\t' -> { /* Ignore whitespace */ }
                     case '\n' -> line++;
@@ -182,7 +180,7 @@ class Scanner {
     private void identifier() {
         while (isAlphaNumeric(peek())) advance();
         String txt = source.substring(start, current);
-        addToken(KEYWORDS.getOrDefault(txt, TokenType.IDENTIFIER));
+        addToken(TokenType.KEYWORDS.getOrDefault(txt, TokenType.IDENTIFIER));
     }
 
     private boolean isAlpha(char c) {
@@ -202,10 +200,9 @@ class Scanner {
     private void number() {
         while (isDigit(peek())) advance();
 
-        // Look for a fractional part
+        // Look for a float
         if (peek() == '.' && isDigit(peekNext())) {
             // Consume the "."
-
             do advance();
             while (isDigit(peek()));
         }
@@ -221,6 +218,7 @@ class Scanner {
                 while ('*' != peekPrevious() && '/' != peek() && !isAtEnd()){
                     advance();
                 }
+                //Consume the "/"
                 advance();
             }else {
                 //Single line comment
@@ -286,3 +284,18 @@ class Scanner {
         addToken(TokenType.STRING, value);
     }
 }
+
+abstract class Expr {
+    static class Binary extends Expr {
+        Binary(Expr left, Token operator, Expr right){
+            this.left = left;
+            this.right = right;
+            this.operator = operator;
+        }
+
+        final Expr left;
+        final Token operator;
+        final Expr right;
+    }
+}
+
