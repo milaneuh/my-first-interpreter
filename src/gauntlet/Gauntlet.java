@@ -56,7 +56,7 @@ class Gauntlet {
     }
 
     private static void report(int line, String context, String message) {
-        System.err.println("Error on line: " + line + "; " + context + " : " + message);
+        System.err.println("Error on line: " + line + ". \n        " + context + " : " + message);
         hasError = true;
     }
 }
