@@ -1,125 +1,7 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+package gauntlet;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-class Gauntlet {
-    private static boolean hasError = false;
-
-    public static void main(String[] args) throws IOException {
-        if (args.length > 1) {
-            System.out.println("Usage: gauntlet [script]");
-            System.exit(64);
-        } else {
-            if (args.length == 1) {
-                runFile(args[0]);
-            } else runPrompt();
-        }
-    }
-
-    private static void runPrompt() throws IOException {
-        InputStreamReader inputStreamReader = new InputStreamReader(System.in);
-        BufferedReader reader = new BufferedReader(inputStreamReader);
-
-        for (; ; ) {
-            System.out.println("> ");
-            String line = reader.readLine();
-            assert line != null : "The input should not be null.";
-            run(line);
-            hasError = false;
-        }
-    }
-
-    private static void runFile(String arg) throws IOException {
-        byte[] bytes = Files.readAllBytes(Paths.get(arg));
-        run(new String(bytes, StandardCharsets.UTF_8));  // Explicit UTF-8 encoding
-
-        if (hasError) System.exit(65);
-    }
-
-    private static void run(String src) {
-        Scanner scanner = new Scanner(src);
-        List<Token> tokens = scanner.scanTokens();
-
-        assert tokens != null : "Tokens should not be null.";
-        tokens.forEach(System.out::println);
-    }
-
-    // Error Handler
-    static void error(int line, String message) {
-        report(line, "", message);
-    }
-
-    private static void report(int line, String context, String message) {
-        System.err.println("Error on line: " + line + "; " + context + " : " + message);
-        hasError = true;
-    }
-}
-
-enum TokenType {
-    // Single-character tokens.
-    LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE, COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
-
-    // One or two character tokens.
-    BANG, BANG_EQUAL, EQUAL, EQUAL_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL,
-
-    // Literals.
-    IDENTIFIER, STRING, NUMBER,
-
-    // Keywords.
-    AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
-
-    EOF;
-    public static final Map<Character, TokenType> SIMPLE_TOKENS = Map.of(
-            '(', TokenType.LEFT_PAREN,
-            ')', TokenType.RIGHT_PAREN,
-            '{', TokenType.LEFT_BRACE,
-            '}', TokenType.RIGHT_BRACE,
-            ',', TokenType.COMMA,
-            '.', TokenType.DOT,
-            '-', TokenType.MINUS,
-            '+', TokenType.PLUS,
-            ';', TokenType.SEMICOLON,
-            '*', TokenType.STAR
-    );
-
-    public static final Map<String, TokenType> KEYWORDS = Map.ofEntries(
-            Map.entry("and", TokenType.AND),
-            Map.entry("class", TokenType.CLASS),
-            Map.entry("else", TokenType.ELSE),
-            Map.entry("false", TokenType.FALSE),
-            Map.entry("for", TokenType.FOR),
-            Map.entry("fun", TokenType.FUN),
-            Map.entry("if", TokenType.IF),
-            Map.entry("nil", TokenType.NIL),
-            Map.entry("or", TokenType.OR),
-            Map.entry("print", TokenType.PRINT),
-            Map.entry("return", TokenType.RETURN),
-            Map.entry("super", TokenType.SUPER),
-            Map.entry("this", TokenType.THIS),
-            Map.entry("true", TokenType.TRUE),
-            Map.entry("var", TokenType.VAR),
-            Map.entry("while", TokenType.WHILE)
-    );
-}
-
-record Token(TokenType type, String lexeme, Object litteral, int line) {
-    public static final String EMPTY_LEXEME = "";
-    public static final Object NULL_LITERAL = null;
-
-    public Token(TokenType type, int line) {
-        this(type, EMPTY_LEXEME, NULL_LITERAL, line);
-    }
-
-    public String toString() {
-        return type + " " + lexeme + " " + litteral;
-    }
-}
 
 class Scanner {
 
@@ -212,15 +94,15 @@ class Scanner {
 
     private void handleSlash() {
         if (match('/')) {
-            if('*' == peekNext()){
+            if ('*' == peekNext()) {
                 //Multi lines comment
                 // Ignore until we encounter "*/"
-                while ('*' != peekPrevious() && '/' != peek() && !isAtEnd()){
+                while ('*' != peekPrevious() && '/' != peek() && !isAtEnd()) {
                     advance();
                 }
                 //Consume the "/"
                 advance();
-            }else {
+            } else {
                 //Single line comment
                 while (peek() != '\n' && !isAtEnd()) advance();
             }
@@ -284,18 +166,3 @@ class Scanner {
         addToken(TokenType.STRING, value);
     }
 }
-
-abstract class Expr {
-    static class Binary extends Expr {
-        Binary(Expr left, Token operator, Expr right){
-            this.left = left;
-            this.right = right;
-            this.operator = operator;
-        }
-
-        final Expr left;
-        final Token operator;
-        final Expr right;
-    }
-}
-
