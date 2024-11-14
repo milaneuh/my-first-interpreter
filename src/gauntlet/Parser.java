@@ -43,7 +43,7 @@ public class Parser {
         return false;
     }
 
-    private boolean check(TokenType type) {
+    private boolean xcfbcheck(TokenType type) {
         if (isAtEnd()) return false;
         return peek().type() == type;
     }
@@ -55,6 +55,11 @@ public class Parser {
 
     private boolean isAtEnd() {
         return peek().type() == EOF;
+    }
+
+    private boolean check(TokenType type) {
+        if (isAtEnd()) return false;
+        return peek().type() == type;
     }
 
     private Token peek() {
@@ -124,9 +129,7 @@ public class Parser {
             Expr expr = expression();
             consume(RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
-        }
-
-        else throw new ParseError();
+        } else throw new ParseError();
     }
 
     //Panic mode !
@@ -143,5 +146,25 @@ public class Parser {
             report(token.line(), " at '" + token.lexeme() + "'", message);
         }
         return new ParseError();
+    }
+
+    private void sync() {
+        advance();
+
+        while (!isAtEnd()) {
+            if (previous().type() == SEMICOLON) return;
+            switch (peek().type()) {
+                case CLASS:
+                case FUN:
+                case VAR:
+                case FOR:
+                case IF:
+                case WHILE:
+                case PRINT:
+                case RETURN:
+                    return;
+            }
+            advance();
+        }
     }
 }
