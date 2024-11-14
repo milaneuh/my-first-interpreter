@@ -27,7 +27,7 @@ class Gauntlet {
         BufferedReader reader = new BufferedReader(inputStreamReader);
 
         for (; ; ) {
-            System.out.println("> ");
+            System.out.print("> ");
             String line = reader.readLine();
             assert line != null : "The input should not be null.";
             run(line);
@@ -45,9 +45,13 @@ class Gauntlet {
     private static void run(String src) {
         Scanner scanner = new Scanner(src);
         List<Token> tokens = scanner.scanTokens();
+        Parser parser = new Parser(tokens);
+        Expr expression = parser.parse();
 
-        assert tokens != null : "Tokens should not be null.";
-        tokens.forEach(System.out::println);
+        // Stop if there was a syntax error.
+        if (hasError) return;
+
+        System.out.println(new AstPrinter().print(expression));
     }
 
     // Error Handler

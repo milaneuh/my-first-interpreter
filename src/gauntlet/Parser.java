@@ -129,7 +129,7 @@ public class Parser {
             Expr expr = expression();
             consume(RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
-        } else throw new ParseError();
+        } else throw error(peek(),"Expression expected but got "+peek().toString());
     }
 
     //Panic mode !
@@ -165,6 +165,14 @@ public class Parser {
                     return;
             }
             advance();
+        }
+    }
+
+    Expr parse(){
+        try {
+            return expression();
+        }catch (ParseError error){
+            return null;
         }
     }
 }
