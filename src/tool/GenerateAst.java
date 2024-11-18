@@ -7,7 +7,7 @@ import java.util.List;
 
 public class GenerateAst {
     public static void main(String[] args) throws IOException {
-        String outputDir = "C:\\Users\\milan\\IdeaProjects\\my-first-interpreter\\src\\gauntlet";
+        String outputDir = "/home/monstre/my-first-interpreter/src/gauntlet";
         defineAst(outputDir, "Expr", Arrays.asList(
                 "Binary   : Expr left, Token operator, Expr right",
                 "Grouping : Expr expression",
