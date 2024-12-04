@@ -2,6 +2,8 @@ package gauntlet;
 
 import javax.management.RuntimeErrorException;
 
+import java.util.List;
+
 import static gauntlet.TokenType.MINUS;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
@@ -107,15 +109,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
         return null;
     }
 
-    void interpret(Expr expression) {
+    void interpret(List<Stmt> statements) {
         try {
-            Object value = evaluate(expression);
-            System.out.println(stringify(value));
-        } catch (RuntimeErrorException error) {
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
+        } catch (RuntimeError error) {
             Gauntlet.runtimeError(error);
         }
     }
-
+    private void execute(Stmt stmt) {
+        stmt.accept(this);
+    }
     private String stringify(Object object) {
         if (object == null) return "nil";
 

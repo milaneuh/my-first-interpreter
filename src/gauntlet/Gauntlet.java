@@ -10,6 +10,7 @@ import java.util.List;
 
 class Gauntlet {
     private static boolean hasError = false;
+    private static boolean hadRuntimeError = false;
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -46,12 +47,12 @@ class Gauntlet {
         Scanner scanner = new Scanner(src);
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
-        Expr expression = parser.parse();
-
+        List<Stmt> stmts = parser.parse();
+        Interpreter interpreter = new Interpreter();
         // Stop if there was a syntax error.
         if (hasError) return;
 
-        System.out.println(new AstPrinter().print(expression));
+        interpreter.interpret(stmts);
     }
 
     // Error Handler
@@ -62,5 +63,10 @@ class Gauntlet {
     static void report(int line, String context, String message) {
         System.err.println("Error on line: " + line + ". \n        " + context + " : " + message);
         hasError = true;
+    }
+    static void runtimeError(RuntimeError error) {
+        System.err.println(error.getMessage() +
+                "\n[line " + error.token.line() + "]");
+        hadRuntimeError = true;
     }
 }
