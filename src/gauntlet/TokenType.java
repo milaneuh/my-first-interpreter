@@ -16,17 +16,18 @@ enum TokenType {
     AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
 
     EOF;
-    public static final Map<Character, TokenType> SIMPLE_TOKENS = Map.of(
-            '(', TokenType.LEFT_PAREN,
-            ')', TokenType.RIGHT_PAREN,
-            '{', TokenType.LEFT_BRACE,
-            '}', TokenType.RIGHT_BRACE,
-            ',', TokenType.COMMA,
-            '.', TokenType.DOT,
-            '-', TokenType.MINUS,
-            '+', TokenType.PLUS,
-            ';', TokenType.SEMICOLON,
-            '*', TokenType.STAR
+    public static final Map<Character, TokenType> SIMPLE_TOKENS = Map.ofEntries(
+            Map.entry('(', TokenType.LEFT_PAREN),
+            Map.entry(')', TokenType.RIGHT_PAREN),
+            Map.entry('{', TokenType.LEFT_BRACE),
+            Map.entry('}', TokenType.RIGHT_BRACE),
+            Map.entry(',', TokenType.COMMA),
+            Map.entry('.', TokenType.DOT),
+            Map.entry('-', TokenType.MINUS),
+            Map.entry('+', TokenType.PLUS),
+            Map.entry(';', TokenType.SEMICOLON),
+            Map.entry('*', TokenType.STAR),
+            Map.entry('=', TokenType.EQUAL)
     );
 
     public static final Map<String, TokenType> KEYWORDS = Map.ofEntries(
