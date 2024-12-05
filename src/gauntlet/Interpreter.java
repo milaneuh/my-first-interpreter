@@ -93,7 +93,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
 
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
-        System.out.println(env.values);
         return env.get(expr.name);
     }
 
@@ -128,8 +127,6 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
         }
 
         env.define(stmt.name.lexeme(), value);
-        System.out.println(env.values);
-
         return null;
     }
 
