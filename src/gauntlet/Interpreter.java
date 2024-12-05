@@ -1,82 +1,80 @@
 package gauntlet;
 
-import javax.management.RuntimeErrorException;
-
 import java.util.List;
 
-import static gauntlet.TokenType.MINUS;
-
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
+    private Env env = new Env();
+
     @Override
     public Object visitBinaryExpr(Expr.Binary expr) {
         Object left = evaluate(expr.left);
         Object right = evaluate(expr.right);
-            switch (expr.operator.type()){
-                case BANG_EQUAL -> {
-                    return !isEqual(left,right);
-                }
-                case EQUAL_EQUAL -> {
-                    return isEqual(left,right);
-                }
-                case GREATER -> {
-                    return (double)left > (double) right;
-                }
-                case GREATER_EQUAL -> {
-                    return (double) left >+ (double) right;
-                }
-                case LESS -> {
-                    return (double) left < (double)  right;
-                }
-                case LESS_EQUAL -> {
-                    return (double) left <= (double) right;
-                }
-                case MINUS -> {
-                    return (double) left - (double) right;
-                }
-                case SLASH -> {
-                    return (double) left / (double) right;
-                }
-                case STAR -> {
-                    return (double) left* (double) right;
-                }
-                case PLUS -> {
-                    if(left instanceof Double && right instanceof Double){
-                        return (double)left + (double) right;
-                    }else{
-                        if (left instanceof String && right instanceof String){
-                            return  (String)left + (String) right;
-                        }
+        switch (expr.operator.type()) {
+            case BANG_EQUAL -> {
+                return !isEqual(left, right);
+            }
+            case EQUAL_EQUAL -> {
+                return isEqual(left, right);
+            }
+            case GREATER -> {
+                return (double) left > (double) right;
+            }
+            case GREATER_EQUAL -> {
+                return (double) left > +(double) right;
+            }
+            case LESS -> {
+                return (double) left < (double) right;
+            }
+            case LESS_EQUAL -> {
+                return (double) left <= (double) right;
+            }
+            case MINUS -> {
+                return (double) left - (double) right;
+            }
+            case SLASH -> {
+                return (double) left / (double) right;
+            }
+            case STAR -> {
+                return (double) left * (double) right;
+            }
+            case PLUS -> {
+                if (left instanceof Double && right instanceof Double) {
+                    return (double) left + (double) right;
+                } else {
+                    if (left instanceof String && right instanceof String) {
+                        return (String) left + (String) right;
                     }
                 }
             }
+        }
 
-            //Unreachable
-            return null;
+        //Unreachable
+        return null;
     }
 
     private boolean isEqual(Object left, Object right) {
-        if(left == null && right == null  ) return true;
-        if(left == null) return false;
+        if (left == null && right == null) return true;
+        if (left == null) return false;
         return left.equals(right);
     }
 
     @Override
     public Object visitGroupingExpr(Expr.Grouping expr) {
-        return evaluate(expr) ;
+        return evaluate(expr);
     }
 
     @Override
     public Object visitLiteralExpr(Expr.Literal expr) {
-        return expr.value   ;
+        return expr.value;
     }
 
     @Override
     public Object visitUnaryExpr(Expr.Unary expr) {
         Object right = evaluate(expr.right);
 
-        switch (expr.operator.type()){
+        switch (expr.operator.type()) {
             case MINUS -> {
-                return -(double)right;
+                return -(double) right;
             }
             case BANG -> {
                 return !isTruthy(right);
@@ -86,13 +84,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
         return null;
     }
 
+    @Override
+    public Object visitVariableExpr(Expr.Variable expr) {
+        return env.get(expr.name);
+    }
+
     private boolean isTruthy(Object object) {
         if (object == null) return false;
-        if (object instanceof Boolean) return (boolean)object;
+        if (object instanceof Boolean) return (boolean) object;
         return true;
     }
 
-    private Object evaluate(Expr expr){
+    private Object evaluate(Expr expr) {
         return expr.accept(this);
     }
 
@@ -109,6 +112,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
         return null;
     }
 
+    @Override
+    public void visitVarStmt(Stmt.Var stmt) {
+        Object value = null;
+        if (stmt.initializer != null){
+            value =  evaluate(stmt.initializer);
+        }
+        env.define(stmt.name.lexeme(),value);
+    }
+
     void interpret(List<Stmt> statements) {
         try {
             for (Stmt statement : statements) {
@@ -118,9 +130,11 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
             Gauntlet.runtimeError(error);
         }
     }
+
     private void execute(Stmt stmt) {
         stmt.accept(this);
     }
+
     private String stringify(Object object) {
         if (object == null) return "nil";
 

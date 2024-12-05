@@ -126,11 +126,14 @@ public class Parser {
             return new Expr.Literal(previous().litteral());
         }
 
+        if(match(IDENTIFIER)){
+            return new Expr.Variable(previous());
+        }
         if (match(LEFT_PAREN)) {
             Expr expr = expression();
             consume(RIGHT_PAREN, "Expect ')' after expression.");
             return new Expr.Grouping(expr);
-        } else throw error(peek(),"Expression expected but got "+peek().toString());
+        } else throw error(peek(), "Expression expected but got " + peek().toString());
     }
 
     //Panic mode !
@@ -169,18 +172,40 @@ public class Parser {
         }
     }
 
-    List<Stmt> parse(){
+    List<Stmt> parse() {
         List<Stmt> statements = new ArrayList<>();
-        while (!isAtEnd()){
-            statements.add(statement());
+        while (!isAtEnd()) {
+            statements.add(declaration());
         }
         return statements;
     }
 
-    private Stmt statement() {
-            if(match(PRINT)) return printStatement();
+    private Stmt declaration() {
+        try {
+            if(match(VAR)) return varDeclaration();
+            return statement();
+        }catch (ParseError error){
+            sync();
+            return null;
+        }
+    }
 
-            return  expressionStatement();
+    private Stmt varDeclaration(){
+        Token name = consume(IDENTIFIER,"Expect variable name.");
+
+        Expr initializer = null;
+        if (match(EQUAL)){
+            initializer = expression();
+        }
+
+        consume(SEMICOLON, "Expect ';' after variable declaration.");
+        return new Stmt.Var(name,initializer);
+    }
+
+    private Stmt statement() {
+        if (match(PRINT)) return printStatement();
+
+        return expressionStatement();
     }
 
     private Stmt printStatement() {
